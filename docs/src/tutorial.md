@@ -215,11 +215,11 @@ In addition to creating NLPModels using JuMP, we might want to convert an NLPMod
 MathProgBase model to use the solvers available. For instance
 
 ```@example nlptompb
-using Ipopt, NLPModels, NLPModelsJuMP, LinearAlgebra, JuMP, MathProgBase
+#using Ipopt, NLPModels, NLPModelsJuMP, LinearAlgebra, JuMP, MathProgBase
 
-nlp = ADNLPModel(x -> dot(x, x), ones(2),
-                 c=x->[x[1] + 2 * x[2] - 1.0], lcon=[0.0], ucon=[0.0])
-model = NLPtoMPB(nlp, IpoptSolver())
+#nlp = ADNLPModel(x -> dot(x, x), ones(2),
+#                 c=x->[x[1] + 2 * x[2] - 1.0], lcon=[0.0], ucon=[0.0])
+#model = NLPtoMPB(nlp, IpoptSolver())
 
-MathProgBase.optimize!(model)
+#MathProgBase.optimize!(model)
 ```
