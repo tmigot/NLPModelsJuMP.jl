@@ -14,6 +14,10 @@ matrix:
   allow_failures:
     - julia: nightly
 
+addons:
+  apt_packages:
+    - gfortran # For Ipopt
+
 notifications:
   email:
     recipients: abel.s.siqueira@gmail.com
