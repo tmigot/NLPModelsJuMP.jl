@@ -23,6 +23,7 @@ notifications:
 branches:
   only:
     - master
+    - docs # TESTING
 
 jobs:
   include:
