@@ -23,7 +23,7 @@ function MathOptNLPModel(jmodel :: JuMP.Model; name :: String="Generic")
   nl_ucon = nnln == 0 ? Float64[] : map(nl_con -> nl_con.ub, jmodel.nlp_data.nlconstr)
 
   eval = jmodel.nlp_data == nothing ? nothing : NLPEvaluator(jmodel)
-  (eval ≠ nothing) && MOI.initialize(eval, [:Grad, :Jac, :Hess, :HessVec])  # Add :JacVec when available
+  (eval ≠ nothing) && MOI.initialize(eval, [:Grad, :Jac, :JacVec, :Hess, :HessVec])
 
   nl_nnzj = nnln == 0 ? 0 : sum(length(nl_con.grad_sparsity) for nl_con in eval.constraints)
   nl_nnzh = (((eval ≠ nothing) && eval.has_nlobj) ? length(eval.objective.hess_I) : 0) + (nnln == 0 ? 0 : sum(length(nl_con.hess_I) for nl_con in eval.constraints))
@@ -140,37 +140,16 @@ function NLPModels.jprod!(nlp :: MathOptNLPModel, x :: AbstractVector, rows :: A
 end
 
 function NLPModels.jprod!(nlp :: MathOptNLPModel, x :: AbstractVector, v :: AbstractVector, Jv :: AbstractVector)
-  rows, cols = jac_structure(nlp)
-  jprod!(nlp, x, rows, cols, v, Jv)
+  increment!(nlp, :neval_jprod)
+  MOI.eval_constraint_jacobian_product(nlp.eval, Jv, x, v)
   return Jv
 end
 
-function NLPModels.jtprod!(nlp :: MathOptNLPModel, x :: AbstractVector, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer}, v :: AbstractVector, Jtv :: AbstractVector)
-  vals = jac_coord(nlp, x)
-  decrement!(nlp, :neval_jac)
-  jtprod!(nlp, rows, cols, vals, v, Jtv)
-  return Jtv
-end
-
 function NLPModels.jtprod!(nlp :: MathOptNLPModel, x :: AbstractVector, v :: AbstractVector, Jtv :: AbstractVector)
-  (rows, cols) = jac_structure(nlp)
-  jtprod!(nlp, x, rows, cols, v, Jtv)
+  increment!(nlp, :neval_jtprod)
+  MOI.eval_constraint_jacobian_transpose_product(nlp.eval, Jtv, x, v)
   return Jtv
 end
-
-# Uncomment when :JacVec becomes available in MOI.
-#
-# function NLPModels.jprod!(nlp :: MathOptNLPModel, x :: AbstractVector, v :: AbstractVector, Jv :: AbstractVector)
-#   increment!(nlp, :neval_jprod)
-#   MOI.eval_constraint_jacobian_product(nlp.eval, Jv, x, v)
-#   return Jv
-# end
-#
-# function NLPModels.jtprod!(nlp :: MathOptNLPModel, x :: AbstractVector, v :: AbstractVector, Jtv :: AbstractVector)
-#   increment!(nlp, :neval_jtprod)
-#   MOI.eval_constraint_jacobian_transpose_product(nlp.eval, Jtv, x, v)
-#   return Jtv
-# end
 
 function NLPModels.hess_structure!(nlp :: MathOptNLPModel, rows :: AbstractVector{<: Integer}, cols :: AbstractVector{<: Integer})
   if nlp.obj.type == "QUADRATIC"
